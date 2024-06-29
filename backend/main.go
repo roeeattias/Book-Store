@@ -5,6 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	mongodb "github.com/roeeattias/Book-Store/mongoDB/database"
+	mongoapi "github.com/roeeattias/Book-Store/mongoDB/handler"
 )
 
 func main() {
@@ -17,6 +18,13 @@ func main() {
 			fmt.Println(err)
 		}
 	}()
+	
+	// user authentication endpoints
+	router.POST("/login", mongoapi.Login)
+	router.POST("/signup", mongoapi.SignUp)
+
+	// book related endpoints
+	router.POST("/publishBook", mongoapi.Middleware, mongoapi.PublishBook)
 
 	fmt.Println("Start listening on post 8080")
 	router.Run()
