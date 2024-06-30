@@ -150,3 +150,35 @@ func PublishBook(c *gin.Context) {
 
 	c.Status(http.StatusCreated)
 }
+
+func GetBooks(c *gin.Context) {
+	var books []mongoschemes.Book
+	
+	// Find documents using the filter
+	filter := bson.D{{}}
+	cursor, err := mongodb.BooksCollection.Find(context.Background(), filter)
+	if err != nil {
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+	defer cursor.Close(context.Background())
+
+	// Iterate through the cursor and decode each document into the books slice
+	for cursor.Next(context.Background()) {
+		var book mongoschemes.Book
+		if err := cursor.Decode(&book); err != nil {
+			c.Status(http.StatusInternalServerError)
+			return
+		}
+		books = append(books, book)
+	}
+
+	// Check for errors after iterating through the cursor
+	if err := cursor.Err(); err != nil {
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+
+	// Send the response
+	c.JSON(http.StatusOK, books)
+}

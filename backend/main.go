@@ -25,6 +25,7 @@ func main() {
 
 	// book related endpoints
 	router.POST("/publishBook", mongoapi.Middleware, mongoapi.PublishBook)
+	router.GET("/getBooks", mongoapi.GetBooks)
 
 	fmt.Println("Start listening on post 8080")
 	router.Run()
