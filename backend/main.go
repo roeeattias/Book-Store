@@ -27,6 +27,7 @@ func main() {
 	router.POST("/publishBook", mongoapi.Middleware, mongoapi.PublishBook)
 	router.GET("/getBooks", mongoapi.GetBooks)
 	router.PATCH("/editBook", mongoapi.Middleware, mongoapi.UpdateBookInformation)
+	router.DELETE("/deleteBook", mongoapi.Middleware, mongoapi.DeleteBook)
 
 	fmt.Println("Start listening on post 8080")
 	router.Run()

@@ -248,3 +248,59 @@ func UpdateBookInformation(c *gin.Context) {
 
 	c.Status(http.StatusOK)
 }
+
+func DeleteBook(c *gin.Context) {
+	var bookToDelete mongoschemes.Book
+
+	// pulling the book object to delete from the request
+	if err := c.BindJSON(&bookToDelete); err != nil {
+		return
+	}
+
+	// getting the currently authenticated user from the moddlewere layer
+	userIdAny, userIdExists := c.Get("userId")
+	if !userIdExists {
+		c.Redirect(http.StatusNetworkAuthenticationRequired, "/login")
+        return
+	}
+
+	// Assert that the user id is a string
+	userId, ok := userIdAny.(string)
+	if !ok {
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+	
+	// converting the user id string into object id
+	userObjectId, err := primitive.ObjectIDFromHex(userId)
+	if err != nil {
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+	
+	// getting the book information from the database bafore updating it
+	// to ensure authenticity of the data
+	currentBook, err := getBookById(bookToDelete.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	// checking if the authenticated user is indeed the author that published the book
+	if userObjectId != currentBook.PublisherId {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Not your book to delete"})
+		return
+	}
+
+	// Define the filter to match the ObjectId
+    filter := bson.M{"_id": bookToDelete.ID}
+
+    // Perform the delete operation
+    _, err = mongodb.BooksCollection.DeleteOne(context.TODO(), filter)
+    if err != nil {
+        c.Status(http.StatusInternalServerError)
+		return
+    }
+
+	c.Status(http.StatusOK)
+}
