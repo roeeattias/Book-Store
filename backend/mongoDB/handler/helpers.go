@@ -2,6 +2,7 @@ package mongoapi
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -12,6 +13,8 @@ import (
 	mongodb "github.com/roeeattias/Book-Store/mongoDB/database"
 	mongoschemes "github.com/roeeattias/Book-Store/mongoDB/models"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 
@@ -134,4 +137,19 @@ func Middleware(c *gin.Context) {
 
 	// Continue with the next middleware or route handler
 	c.Next()
+}
+
+func getBookById(id primitive.ObjectID) (mongoschemes.Book, error) {
+	// Fetch the document by ObjectID
+    var book mongoschemes.Book
+    err := mongodb.BooksCollection.FindOne(context.Background(), bson.M{"_id": id}).Decode(&book)
+    if err != nil {
+        if err == mongo.ErrNoDocuments {
+            return mongoschemes.Book{}, errors.New("BOOK NOT FOUND")
+        } else {
+            return mongoschemes.Book{}, err
+        }
+    } else {
+        return book, nil
+    }
 }

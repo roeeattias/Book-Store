@@ -98,7 +98,7 @@ func PublishBook(c *gin.Context) {
 		c.Redirect(http.StatusNetworkAuthenticationRequired, "/login")
         return
 	}
-
+	
 	// Assert that the username is a string
 	username, ok := usernameAny.(string)
 	if !ok {
@@ -112,7 +112,8 @@ func PublishBook(c *gin.Context) {
 		c.Status(http.StatusInternalServerError)
 		return
 	}
-
+	
+	// converting the user id string into object id
 	userIdObject, err := primitive.ObjectIDFromHex(userId)
 	if err != nil {
 		c.Status(http.StatusInternalServerError)
@@ -120,6 +121,7 @@ func PublishBook(c *gin.Context) {
 	}
 
 	// filling neccessary fields to the new book object
+	newBook.ID = primitive.ObjectID{}
 	newBook.PublishDate = time.Now()
 	newBook.Publisher = username
 	newBook.PublisherId = userIdObject
@@ -181,4 +183,68 @@ func GetBooks(c *gin.Context) {
 
 	// Send the response
 	c.JSON(http.StatusOK, books)
+}
+
+func UpdateBookInformation(c *gin.Context) {
+	var updatedBookData mongoschemes.Book
+	
+	// pulling the new updated book data from the request
+	if err := c.BindJSON(&updatedBookData); err != nil {
+		return
+	}
+
+	// getting the currently authenticated user from the moddlewere
+	userIdAny, userIdExists := c.Get("userId")
+	if !userIdExists {
+		c.Redirect(http.StatusNetworkAuthenticationRequired, "/login")
+        return
+	}
+
+	// Assert that the user id is a string
+	userId, ok := userIdAny.(string)
+	if !ok {
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+
+	
+	// converting the user id string into object id
+	userObjectId, err := primitive.ObjectIDFromHex(userId)
+	if err != nil {
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+
+	// getting the book information from the database bafore updating it
+	// to ensure authenticity of the data
+	currentBook, err := getBookById(updatedBookData.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, err)
+		return
+	}
+
+	// checking if the authenticated user is indeed the author that published the book
+	if userObjectId != currentBook.PublisherId {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Not your book to update"})
+		return
+	}
+
+	// Update the book instance with the new data
+	update := bson.M{
+		"$set": bson.M{
+			"title": updatedBookData.Title,
+			"author": updatedBookData.Author,
+			"quantity": updatedBookData.Quantity,
+		},
+	}
+
+	// updating the book data
+	filter := bson.M{"_id": currentBook.ID}
+	_, updateErr := mongodb.BooksCollection.UpdateOne(context.Background(), filter, update)
+	if updateErr != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update the book data"})
+		return
+	}
+
+	c.Status(http.StatusOK)
 }

@@ -11,8 +11,8 @@ type Book struct {
 	Title	string `bson:"title" json:"title"`
 	Author 	string `bson:"author" json:"author"`
 	Quantity int   `bson:"quantity" json:"quantity"`
-	PublishDate time.Time `bson:"publish_date"`
-	Publisher string `bson:"publisher"`
-	PublisherId primitive.ObjectID `bson:"publisher_id"`
-	Rating int `bson:"rating"`
+	PublishDate time.Time `bson:"publish_date" json:"publish_date"`
+	Publisher string `bson:"publisher" json:"publisher"`
+	PublisherId primitive.ObjectID `bson:"publisher_id" json:"publisher_id"`
+	Rating int `bson:"rating" json:"rating"`
 }
