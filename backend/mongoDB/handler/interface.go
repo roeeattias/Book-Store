@@ -132,7 +132,7 @@ func PublishBook(c *gin.Context) {
 		c.Status(http.StatusInternalServerError)
 		return
 	}
-	
+
 
 	// Update the authors collection to add the new book to the author's books array
 	update := bson.M{
@@ -149,8 +149,14 @@ func PublishBook(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update author's books"})
 		return
 	}
-
-	c.Status(http.StatusCreated)
+	
+	newBookId, ok := bookInstance.InsertedID.(primitive.ObjectID)
+	if !ok {
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+	newBook.ID = newBookId
+	c.JSON(http.StatusCreated, newBook)
 }
 
 func GetBooks(c *gin.Context) {
