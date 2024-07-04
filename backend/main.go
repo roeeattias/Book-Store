@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	mongodb "github.com/roeeattias/Book-Store/mongoDB/database"
 	mongoapi "github.com/roeeattias/Book-Store/mongoDB/handler"
@@ -11,6 +12,18 @@ import (
 func main() {
 	router := gin.Default()
 	mongodb.Connect()
+	
+	// Define your CORS configuration
+    corsConfig := cors.Config{
+        AllowOrigins:     []string{"http://localhost:3000"}, // Allowed origin(s)
+        AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"}, // Allowed methods
+        AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"}, // Allowed headers
+        ExposeHeaders:    []string{"Content-Length"}, // Expose specific headers to the client
+        AllowCredentials: true, // Allow credentials (cookies, authorization headers)
+    }
+
+    // Apply the CORS middleware to the router
+    router.Use(cors.New(corsConfig))
 
 	defer func() {
 		err := mongodb.Close()
