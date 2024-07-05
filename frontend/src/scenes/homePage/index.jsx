@@ -10,12 +10,12 @@ const HomePage = () => {
 
   return (
     <div className="grid grid-cols-3 w-full">
-      {/* <div className="flex m-4 w-full justify-center">
+      <div className="flex m-4 w-full justify-center">
         {user === null ? <User /> : <Author />}
       </div>
-      <div className="flex m-4 justify-center p-4">
+      <div className="flex m-4 justify-center p-4 max-h-screen overflow-y-auto">
         <Books />
-      </div> */}
+      </div>
       <div className="flex m-4 justify-center p-4">
         <Search />
       </div>
