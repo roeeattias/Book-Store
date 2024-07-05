@@ -310,3 +310,42 @@ func DeleteBook(c *gin.Context) {
 
 	c.Status(http.StatusOK)
 }
+
+func BuyBook(c *gin.Context) {
+	var book mongoschemes.Book
+	
+	// pulling the new updated book data from the request
+	if err := c.BindJSON(&book); err != nil {
+		return
+	}
+
+	// getting the book information from the database bafore updating it
+	// to ensure authenticity of the data
+	currentBook, err := getBookById(book.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, err)
+		return
+	}
+
+	if (currentBook.Quantity == 0) {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Book out of stock"})
+		return
+	}
+
+	// Update the book instance with the new data
+	update := bson.M{
+		"$set": bson.M{
+			"quantity": currentBook.Quantity - 1,
+		},
+	}
+
+	// updating the book data
+	filter := bson.M{"_id": currentBook.ID}
+	_, updateErr := mongodb.BooksCollection.UpdateOne(context.Background(), filter, update)
+	if updateErr != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update the book data"})
+		return
+	}
+
+	c.Status(http.StatusOK)
+}
