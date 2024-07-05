@@ -6,7 +6,8 @@ module.exports = {
       colors: {
         buyMeButton: "#478955",
         background: "#F0F2F5",
-        BecomeAnAuthorButton: "#2F82FF",
+        becomeAnAuthorButton: "#2F82FF",
+        searchBoxFill: "#D9D9D9",
       },
       fontFamily: {
         inika: ["Inika", "sans-serif"],

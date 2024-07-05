@@ -1,5 +1,5 @@
 import { useSelector } from "react-redux";
-import { redirect, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 const User = () => {
   const booksBought = useSelector((state) => state.bought);
@@ -22,7 +22,7 @@ const User = () => {
         </div>
       </div>
       <button
-        className="bg-BecomeAnAuthorButton rounded-lg p-3 text-white font-semibold w-full text-xl"
+        className="bg-becomeAnAuthorButton rounded-lg p-3 text-white font-semibold w-full text-xl"
         onClick={() => {
           navigate("/login");
         }}

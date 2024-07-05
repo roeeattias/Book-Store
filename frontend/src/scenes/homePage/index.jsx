@@ -1,5 +1,6 @@
 import Author from "components/Author";
 import Books from "components/Books";
+import Search from "components/Search";
 import User from "components/User";
 import { useSelector } from "react-redux";
 
@@ -9,11 +10,14 @@ const HomePage = () => {
 
   return (
     <div className="grid grid-cols-3 w-full">
-      <div className="flex m-4 w-full justify-center">
-        {user === null ? <User></User> : <Author></Author>}
+      {/* <div className="flex m-4 w-full justify-center">
+        {user === null ? <User /> : <Author />}
       </div>
       <div className="flex m-4 justify-center p-4">
         <Books />
+      </div> */}
+      <div className="flex m-4 justify-center p-4">
+        <Search />
       </div>
     </div>
   );
