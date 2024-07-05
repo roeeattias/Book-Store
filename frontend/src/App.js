@@ -33,7 +33,7 @@ function App() {
   }, []);
 
   return (
-    <div className="app bg-red-50 flex flex-row h-screen">
+    <div className="app bg-background flex flex-row h-screen">
       <BrowserRouter>
         <CssBaseline />
         <Routes>

@@ -1,8 +1,9 @@
-import { createSlice } from "@reduxjs/toolkit";
+import { createSlice, current } from "@reduxjs/toolkit";
 
 const initialState = {
   user: null,
   token: null,
+  bought: 0,
   books: [],
 };
 
@@ -22,14 +23,20 @@ export const authSlice = createSlice({
       state.books = action.payload.books;
     },
     setBook: (state, action) => {
-      const updatedBooks = state.Books.map((book) => {
-        if (book._id === action.payload.book._id) return action.payload.Book;
+      const updatedBooks = current(state.books).map((book) => {
+        if (book.id === action.payload.book.id) {
+          return action.payload.book;
+        }
         return book;
       });
-      state.Books = updatedBooks;
+      state.books = updatedBooks;
+    },
+    incBoughtBook: (state) => {
+      state.bought = state.bought + 1;
     },
   },
 });
 
-export const { setLogin, setLogout, setBooks, setBook } = authSlice.actions;
+export const { setLogin, setLogout, setBooks, setBook, incBoughtBook } =
+  authSlice.actions;
 export default authSlice.reducer;

@@ -1,4 +1,32 @@
+import { useDispatch } from "react-redux";
+import { incBoughtBook, setBook } from "state";
+
 const Book = ({ book }) => {
+  const dispatch = useDispatch();
+  const publishDate = new Date(book.publish_date);
+  const day = publishDate.getUTCDate();
+  const month = publishDate.getUTCMonth() + 1;
+  const year = publishDate.getUTCFullYear();
+
+  const buyBook = async () => {
+    const response = await fetch("http://localhost:8080/buyBook", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: book.id }),
+    });
+    if (response.status === 200) {
+      dispatch(
+        setBook({
+          book: {
+            ...book,
+            quantity: book.quantity - 1,
+          },
+        })
+      );
+      dispatch(incBoughtBook());
+    }
+  };
+
   return (
     <div className="flex flex-col border-black border-2 rounded-md w-full p-3">
       <div className="flex flex-row m-2 gap-6">
@@ -13,11 +41,18 @@ const Book = ({ book }) => {
           <div className="font-inika">Author: {book.author}</div>
           <div>Left: {book.quantity}</div>
           <div>Publisher: {book.publisher}</div>
-          <div className="text-red-600">Publish date: // need to parse</div>
-          <div className="text-red-600">Price: // need to add</div>
+          <div>
+            Publish date: {day}/{month}/{year}
+          </div>
+          <div className="flex flex-row gap-1">
+            Price: <div className="text-buyMeButton">{book.price}$</div>
+          </div>
         </div>
       </div>
-      <button className="bg-buyMeButton m-2 rounded-md p-3 text-white font-semibold">
+      <button
+        className="bg-buyMeButton m-2 rounded-md p-3 text-white font-semibold"
+        onClick={buyBook}
+      >
         Buy now
       </button>
     </div>
