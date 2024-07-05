@@ -349,3 +349,40 @@ func BuyBook(c *gin.Context) {
 
 	c.Status(http.StatusOK)
 }
+
+func GetAuthors(c *gin.Context) {
+	query := c.PostForm("query")
+		
+	// Define the filter to find authors whose usernames start with the query
+	filter := bson.M{"username": bson.M{"$regex": "^" + query, "$options": "i"}}
+
+	// Use Find method with filter to get a cursor for the matching documents
+	cursor, err := mongodb.AuthorCollection.Find(context.Background(), filter)
+	if err != nil {
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+	defer cursor.Close(context.Background())
+
+	// Prepare a slice to hold the results
+	var authors []mongoschemes.Author
+
+	// Iterate through the cursor and decode directly into the response slice
+	for cursor.Next(context.Background()) {
+		var author mongoschemes.Author
+		if err := cursor.Decode(&author); err != nil {
+			c.Status(http.StatusInternalServerError)
+			return
+		}
+		authors = append(authors, author)
+	}
+
+	// Check for errors after iterating through the cursor
+	if err := cursor.Err(); err != nil {
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+
+	// Send the response
+	c.JSON(http.StatusOK, authors)
+}
