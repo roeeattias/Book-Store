@@ -44,10 +44,16 @@ func Login(c *gin.Context) {
 		return
 	}
 
+	response := map[string]interface{}{
+		"id": author.ID,
+		"username": author.Username,
+		"publishedBooks": author.PublishedBooks,
+	}
+
 	// setting an authorization cookie
 	c.SetSameSite(http.SameSiteLaxMode)
 	c.SetCookie("Authorization", token, 3600 * 24 * 30, "", "", false, true)
-	c.Status(http.StatusOK)
+	c.JSON(http.StatusOK, response)
 }
 
 func SignUp(c *gin.Context) {
@@ -55,6 +61,13 @@ func SignUp(c *gin.Context) {
 
 	// pulling author data from the request to the object
 	if err := c.BindJSON(&newAuthor); err != nil {
+		return
+	}
+
+	// checking if the author exists in the database
+	author := getAuthorByName(newAuthor.Username)
+	if author.Username != "" {
+		c.Status(http.StatusInternalServerError)
 		return
 	}
 
@@ -77,10 +90,17 @@ func SignUp(c *gin.Context) {
 		c.Status(http.StatusInternalServerError)
 		return
 	}
+	
+	response := map[string]interface{}{
+		"id": authorInstance.InsertedID,
+		"username": newAuthor.Username,
+		"publishedBooks": newAuthor.PublishedBooks,
+	}
+	
 	// setting the authorization cookie
 	c.SetSameSite(http.SameSiteLaxMode)
 	c.SetCookie("Authorization", token, 3600 * 24 * 30, "", "", false, true)
-	c.Status(http.StatusCreated)
+	c.JSON(http.StatusCreated, response)
 }
 
 func PublishBook(c *gin.Context) {
