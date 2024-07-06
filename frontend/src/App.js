@@ -5,6 +5,8 @@ import HomePage from "scenes/homePage";
 import { useDispatch, useSelector } from "react-redux";
 import { CssBaseline } from "@mui/material";
 import { setBooks } from "state";
+import LoginPage from "scenes/loginPage";
+import SignUpPage from "scenes/signupPage";
 
 function App() {
   const isAuth = Boolean(useSelector((state) => state.token));
@@ -38,6 +40,8 @@ function App() {
         <CssBaseline />
         <Routes>
           <Route path="/" element={<HomePage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/signup" element={<SignUpPage />} />
         </Routes>
       </BrowserRouter>
     </div>

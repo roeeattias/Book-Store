@@ -29,14 +29,14 @@ const Book = ({ book }) => {
 
   return (
     <div className="flex flex-col border-black border-2 rounded-md w-full p-3">
-      <div className="flex flex-row m-2 gap-6">
+      <div className="flex flex-row gap-5">
         <img
           src={`${process.env.PUBLIC_URL}/images/book_image.jpg`}
           alt="Book"
-          className="w-64 h-64 object-cover rounded-lg"
+          className="w-52 h-62 object-cover rounded-lg"
         />
-        <div className="flex flex-col w-full justify-evenly font-bold font-inika">
-          <div className="text-3xl">{book.title}</div>
+        <div className="flex flex-col w-full justify-evenly font-bold font-inika text-sm">
+          <div className="text-2xl">{book.title}</div>
           <div className="border border-gray-950" />
           <div className="font-inika">Author: {book.author}</div>
           <div>Left: {book.quantity}</div>
@@ -50,7 +50,7 @@ const Book = ({ book }) => {
         </div>
       </div>
       <button
-        className="bg-buyMeButton m-2 rounded-md p-3 text-white font-semibold"
+        className="bg-buyMeButton mt-2 rounded-md p-3 text-white font-semibold"
         onClick={buyBook}
       >
         Buy now

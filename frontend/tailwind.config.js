@@ -6,7 +6,7 @@ module.exports = {
       colors: {
         buyMeButton: "#478955",
         background: "#F0F2F5",
-        becomeAnAuthorButton: "#2F82FF",
+        becomeAnAuthorButton: "#002D62",
         searchBoxFill: "#D9D9D9",
       },
       fontFamily: {
