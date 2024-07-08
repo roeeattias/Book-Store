@@ -39,7 +39,7 @@ const Book = ({ book, inAuthorProfile }) => {
     <div className="flex flex-col border-black border-2 rounded-md w-full p-3">
       <div className="flex flex-row gap-5">
         <img
-          src={`${process.env.PUBLIC_URL}/images/book_image.jpg`}
+          src={book.image_url}
           alt="Book"
           className="w-52 h-62 object-cover rounded-lg"
         />

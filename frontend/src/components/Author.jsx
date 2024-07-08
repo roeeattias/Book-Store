@@ -18,11 +18,12 @@ const Author = ({ setVisitedAuthor }) => {
 
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => setIsModalOpen(false);
+
   const publishBook = async () => {
     if (!isModalOpen) {
       openModal();
     } else {
-      if (!(title && author && quantity && price)) {
+      if (!(title && author && quantity && price && profilePicture)) {
         alert("Please enter all the required fields");
       } else {
         try {
@@ -35,6 +36,7 @@ const Author = ({ setVisitedAuthor }) => {
               author: author,
               quantity: parseInt(quantity),
               price: parseInt(price),
+              image_url: profilePicture,
             }),
           });
           if (response.status === 201) {
@@ -57,13 +59,13 @@ const Author = ({ setVisitedAuthor }) => {
     <div className="m-5 w-full font-inika flex flex-col gap-3">
       <div className="border-black rounded-lg border-2 flex flex-row items-center pt-3 pb-3 pl-4 gap-4 justify-between">
         <div
-          className="flex flex-row w-full items-center gap-4 hover:scale-105 hover:translate-x-1 transition ease-in-out delay-150 duration-300"
+          className="flex flex-row w-full items-center gap-4 hover:scale-105 hover:translate-x-1 transition ease-in-out delay-50 duration-300"
           onClick={() => {
             setVisitedAuthor(user);
           }}
         >
           <img
-            src={user.profilePicture}
+            src={user.image_url}
             alt="Book"
             className="w-16 h-16 object-cover rounded-full"
           />
@@ -92,6 +94,8 @@ const Author = ({ setVisitedAuthor }) => {
           setPrice={setPrice}
           setQuantity={setQuantity}
           setProfilePicture={setProfilePicture}
+          profilePicture={profilePicture}
+          closeModal={closeModal}
         />
       )}
       <button

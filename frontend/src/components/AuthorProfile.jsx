@@ -26,7 +26,7 @@ const AuthorProfile = ({ author }) => {
         <img
           src={author.image_url}
           alt="Book"
-          className="w-20 h-20 object-cover rounded-full"
+          className="w-24 h-24 object-cover rounded-full"
         />
         <div className="font-bold text-2xl mt-3">{author.username}</div>
         <p className="text-subText text-sm">Sold: 600 Books</p>

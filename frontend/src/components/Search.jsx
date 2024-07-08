@@ -14,6 +14,7 @@ const Search = ({ setVisitedAuthor }) => {
       if (response.status === 200) {
         const authors = await response.json();
         setAuthors(authors);
+        console.log(authors);
       }
     } catch (err) {
       alert("Failed to get authors, Please check your internet connection");

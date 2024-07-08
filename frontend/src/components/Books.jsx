@@ -17,7 +17,7 @@ const Books = ({ booksToShow }) => {
         <>
           {booksToShow.map((book) => (
             <Book
-              key={`profile ${book._id}`}
+              key={`profile ${book.id}`}
               book={book}
               inAuthorProfile={true}
             />
