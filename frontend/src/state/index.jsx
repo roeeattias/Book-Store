@@ -24,12 +24,24 @@ export const authSlice = createSlice({
     },
     setBook: (state, action) => {
       const updatedBooks = current(state.books).map((book) => {
-        if (book.id === action.payload.book.id) {
+        const bookId = book.id === undefined ? book._id : book.id;
+        const bookFromPayload =
+          action.payload.book.id === undefined
+            ? action.payload.book._id
+            : action.payload.book.id;
+        if (bookId === bookFromPayload) {
           return action.payload.book;
         }
         return book;
       });
       state.books = updatedBooks;
+    },
+    addBook: (state, action) => {
+      state.books = [...state.books, action.payload.book];
+      state.user.publishedBooks = [
+        ...state.user.publishedBooks,
+        action.payload.book.id,
+      ];
     },
     incBoughtBook: (state) => {
       state.bought = state.bought + 1;
@@ -37,6 +49,12 @@ export const authSlice = createSlice({
   },
 });
 
-export const { setLogin, setLogout, setBooks, setBook, incBoughtBook } =
-  authSlice.actions;
+export const {
+  setLogin,
+  setLogout,
+  setBooks,
+  setBook,
+  addBook,
+  incBoughtBook,
+} = authSlice.actions;
 export default authSlice.reducer;

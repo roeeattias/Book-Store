@@ -1,7 +1,7 @@
 import { useDispatch } from "react-redux";
 import { incBoughtBook, setBook } from "state";
 
-const Book = ({ book }) => {
+const Book = ({ book, inAuthorProfile }) => {
   const dispatch = useDispatch();
   const publishDate = new Date(book.publish_date);
   const day = publishDate.getUTCDate();
@@ -9,21 +9,29 @@ const Book = ({ book }) => {
   const year = publishDate.getUTCFullYear();
 
   const buyBook = async () => {
-    const response = await fetch("http://localhost:8080/buyBook", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: book.id }),
-    });
-    if (response.status === 200) {
-      dispatch(
-        setBook({
-          book: {
-            ...book,
-            quantity: book.quantity - 1,
-          },
-        })
-      );
-      dispatch(incBoughtBook());
+    const bookId = book.id === undefined ? book._id : book.id;
+    try {
+      const response = await fetch("http://localhost:8080/buyBook", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: bookId }),
+      });
+      if (response.status === 200) {
+        dispatch(
+          setBook({
+            book: {
+              ...book,
+              quantity: book.quantity - 1,
+            },
+          })
+        );
+        if (inAuthorProfile === true) {
+          book.quantity = book.quantity - 1;
+        }
+        dispatch(incBoughtBook());
+      }
+    } catch (err) {
+      alert("Failed to buy book without internet connection");
     }
   };
 
@@ -36,7 +44,7 @@ const Book = ({ book }) => {
           className="w-52 h-62 object-cover rounded-lg"
         />
         <div className="flex flex-col w-full justify-evenly font-bold font-inika text-sm">
-          <div className="text-2xl">{book.title}</div>
+          <div className="text-2xl capitalize-first-letter">{book.title}</div>
           <div className="border border-gray-950" />
           <div className="font-inika">Author: {book.author}</div>
           <div>Left: {book.quantity}</div>

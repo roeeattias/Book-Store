@@ -1,3 +1,4 @@
+import ImageUpload from "components/ImageUpload";
 import { useState } from "react";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
@@ -6,23 +7,29 @@ import { setLogin } from "state";
 const SignUpPage = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [profilePicture, setProfilePicture] = useState(null);
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
   const onSubmit = async () => {
-    if (username && password) {
+    if (username && password && profilePicture) {
       const response = await fetch("http://localhost:8080/signup", {
         method: "POST",
         credentials: "include",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ username: username, password: password }),
+        body: JSON.stringify({
+          username: username,
+          password: password,
+          image_url: profilePicture,
+        }),
       });
 
       if (response.status === 201) {
         const user = await response.json();
-        dispatch(setLogin(user));
+        dispatch(setLogin({ user: user }));
+        setProfilePicture(null);
         navigate("/");
       } else {
         alert("Username already exists");
@@ -30,9 +37,10 @@ const SignUpPage = () => {
     }
     if (username === "") {
       alert("Please enter your username");
-    }
-    if (password === "") {
+    } else if (password === "") {
       alert("Please enter your password");
+    } else if (profilePicture === null) {
+      alert("Please upload profile picture");
     }
   };
 
@@ -65,6 +73,10 @@ const SignUpPage = () => {
               className="w-full border border-black rounded-md p-3 border-opacity-20 bg-searchBoxFill bg-opacity-20 text-sm font-bold pl-5"
             />
           </form>
+          <ImageUpload
+            setProfilePicture={setProfilePicture}
+            profilePicture={profilePicture}
+          />
         </div>
         <button
           onClick={onSubmit}

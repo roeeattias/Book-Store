@@ -21,9 +21,8 @@ const LoginPage = () => {
       });
 
       if (response.status === 200) {
-        console.log(response.body);
         const user = await response.json();
-        dispatch(setLogin(user));
+        dispatch(setLogin({ user: user }));
         navigate("/");
       } else {
         alert("Username or password are incorrect");
