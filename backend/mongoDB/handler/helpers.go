@@ -2,10 +2,12 @@ package mongoapi
 
 import (
 	"context"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -94,8 +96,9 @@ func verifyToken(tokenString string) (*jwt.Token, error) {
 func Middleware(c *gin.Context) {
 	// Retrieve the token from the cookie
 	jwtToken, err := c.Cookie("Authorization")
+
 	if err != nil {
-		c.Redirect(http.StatusSeeOther, "/login")
+		c.Status(http.StatusSeeOther)
 		c.Abort()
 		return
 	}
@@ -103,7 +106,7 @@ func Middleware(c *gin.Context) {
 	// Verify the token
 	token, err := verifyToken(jwtToken)
 	if err != nil {
-		c.Redirect(http.StatusSeeOther, "/login")
+		c.Status(http.StatusSeeOther)
 		c.Abort()
 		return
 	}
@@ -111,7 +114,7 @@ func Middleware(c *gin.Context) {
 	// Extract the claims
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok || !token.Valid {
-		c.Redirect(http.StatusSeeOther, "/login")
+		c.Status(http.StatusSeeOther)
 		c.Abort()
 		return
 	}
@@ -119,7 +122,7 @@ func Middleware(c *gin.Context) {
 	// Extract the username from the claims
 	username, ok := claims["username"].(string)
 	if !ok {
-		c.Redirect(http.StatusSeeOther, "/login")
+		c.Status(http.StatusSeeOther)
 		c.Abort()
 		return
 	}
@@ -127,11 +130,11 @@ func Middleware(c *gin.Context) {
 	// Extract the user id from the claims
 	userId, ok := claims["user_id"].(string)
 	if !ok {
-		c.Redirect(http.StatusSeeOther, "/login")
+		c.Status(http.StatusSeeOther)
 		c.Abort()
 		return
 	}
-	
+
 	c.Set("username", username)
 	c.Set("userId", userId)
 
@@ -152,4 +155,53 @@ func getBookById(id primitive.ObjectID) (mongoschemes.Book, error) {
     } else {
         return book, nil
     }
+}
+
+func encodeImageToBase64(imagePath interface{}) (string, error) {
+	imageUrl, ok := imagePath.(string)
+	if (!ok) {
+		return "", errors.New("could not load image")
+	}
+
+	// Read image file
+	imageFile, err := os.ReadFile(imageUrl)
+
+	if err != nil {
+		return "", err
+	}
+
+	// Encode image data to base64
+	base64ImageData := base64.StdEncoding.EncodeToString(imageFile)
+	base64ImageData = "data:image/jpeg;base64," + base64ImageData
+	
+	return base64ImageData, nil
+}
+
+func decodeImageFromBase64(imagePath interface{}) ([]byte, string) {
+	// Type assertion to convert interface{} to map[string]interface{}
+	fmt.Println(imagePath)
+	dataMap, ok := imagePath.(map[string]interface{});
+	if !ok {
+		fmt.Println("here1")
+		return nil, ""
+	}
+
+	// Access the 'dataUrl' key if it exists
+	dataUrl, ok := dataMap["dataUrl"].(string);
+	if !ok {
+		fmt.Println("here2")
+		return nil, ""
+	}
+
+	// Extract the base64 encoded data
+    base64ImageData := strings.Split(dataUrl, ";base64,")[1]
+
+    // Decode base64 string to byte slice
+    decoded, err := base64.StdEncoding.DecodeString(base64ImageData)
+    if err != nil {
+		fmt.Println("here3")
+		return nil, ""
+    }
+
+	return decoded, base64ImageData
 }

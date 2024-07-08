@@ -4,11 +4,14 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"os"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	mongodb "github.com/roeeattias/Book-Store/mongoDB/database"
 	mongoschemes "github.com/roeeattias/Book-Store/mongoDB/models"
+	requestsDataStructures "github.com/roeeattias/Book-Store/mongoDB/requestsStructs"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"golang.org/x/crypto/bcrypt"
@@ -29,7 +32,7 @@ func Login(c *gin.Context) {
 		c.Status(http.StatusInternalServerError)
 		return
 	}
-	
+
 	// comparing the password entered by the user to the hashed password in the database
 	err := bcrypt.CompareHashAndPassword([]byte(author.Password), []byte(credentials.Password))
     if err != nil {
@@ -37,6 +40,12 @@ func Login(c *gin.Context) {
 		return
 	}
 
+	base64ImageData, err := encodeImageToBase64(author.ImageUrl)
+	if (err != nil) {
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+	
 	// generating a jwt token
 	token, err := generateJWTtoken(credentials.Username, author.ID.Hex())
 	if err != nil {
@@ -48,6 +57,7 @@ func Login(c *gin.Context) {
 		"id": author.ID,
 		"username": author.Username,
 		"publishedBooks": author.PublishedBooks,
+		"profilePicture": base64ImageData,
 	}
 
 	// setting an authorization cookie
@@ -63,7 +73,7 @@ func SignUp(c *gin.Context) {
 	if err := c.BindJSON(&newAuthor); err != nil {
 		return
 	}
-
+	
 	// checking if the author exists in the database
 	author := getAuthorByName(newAuthor.Username)
 	if author.Username != "" {
@@ -71,12 +81,30 @@ func SignUp(c *gin.Context) {
 		return
 	}
 
+	decodedImageData, base64ImageData := decodeImageFromBase64(newAuthor.ImageUrl)
+	if (decodedImageData == nil) {
+		fmt.Println("here")
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+
+	// Determine the file type using http.DetectContentType
+	fileType := http.DetectContentType(decodedImageData)
+	filePath := "profileImages/" + newAuthor.Username + "." + strings.Split(fileType, "/")[1]
+	
+    // Write to file
+    if err := os.WriteFile(filePath, decodedImageData, 0644); err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Faild to upload profile image"})
+		return
+    }
+
 	// hashing the password (Bcrypt, 12 factor)
 	password := newAuthor.Password
 	bytes, _ := bcrypt.GenerateFromPassword([]byte(password), 12)
     newAuthor.Password = string(bytes)
 	newAuthor.PublishedBooks = []primitive.ObjectID{}
-	
+	newAuthor.ImageUrl = filePath
+
 	// Creating a new user document
 	authorInstance, err := mongodb.AuthorCollection.InsertOne(context.Background(), newAuthor)
 	if err != nil {
@@ -90,11 +118,12 @@ func SignUp(c *gin.Context) {
 		c.Status(http.StatusInternalServerError)
 		return
 	}
-	
+
 	response := map[string]interface{}{
 		"id": authorInstance.InsertedID,
 		"username": newAuthor.Username,
 		"publishedBooks": newAuthor.PublishedBooks,
+		"profilePicture": "data:image/jpeg;base64," + base64ImageData,
 	}
 	
 	// setting the authorization cookie
@@ -113,9 +142,8 @@ func PublishBook(c *gin.Context) {
 
 	usernameAny, usernameExists := c.Get("username")
 	userIdAny, userIdExists := c.Get("userId")
-
 	if !userIdExists || !usernameExists {
-		c.Redirect(http.StatusNetworkAuthenticationRequired, "/login")
+		c.Status(http.StatusNetworkAuthenticationRequired)
         return
 	}
 	
@@ -165,7 +193,6 @@ func PublishBook(c *gin.Context) {
 
 	_, updateErr := mongodb.AuthorCollection.UpdateOne(context.Background(), filter, update)
 	if updateErr != nil {
-		fmt.Println(updateErr)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update author's books"})
 		return
 	}
@@ -394,6 +421,12 @@ func GetAuthors(c *gin.Context) {
 			c.Status(http.StatusInternalServerError)
 			return
 		}
+		base64ImageData, err := encodeImageToBase64(author.ImageUrl)
+		if (err != nil) {
+			c.Status(http.StatusInternalServerError)
+			return
+		}
+		author.ImageUrl = base64ImageData
 		authors = append(authors, author)
 	}
 
@@ -402,7 +435,49 @@ func GetAuthors(c *gin.Context) {
 		c.Status(http.StatusInternalServerError)
 		return
 	}
+	if len(authors) > 0 {
+		// Send the response
+		c.JSON(http.StatusOK, authors)
+	} else {
+		c.Status(http.StatusNotFound)
+	}
+}
 
-	// Send the response
-	c.JSON(http.StatusOK, authors)
+func GetAuthorBooks(c *gin.Context) {
+	var books requestsDataStructures.AuthorsPublishedBooks
+	
+	// Bind JSON payload to the struct
+	if err := c.BindJSON(&books); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	
+	// Convert the array of string IDs to ObjectIDs
+	objectIDs := make([]primitive.ObjectID, len(books.Books))
+	for i, idStr := range books.Books {
+		objectID, err := primitive.ObjectIDFromHex(idStr)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid book ID format"})
+			return
+		}
+		objectIDs[i] = objectID
+	}
+	
+	// Use the $in operator to find matching documents
+	filter := bson.M{"_id": bson.M{"$in": objectIDs}}
+	cursor, err := mongodb.BooksCollection.Find(context.Background(), filter)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error finding books"})
+		return
+	}
+	defer cursor.Close(context.Background())
+
+	var booksFound []bson.M
+	if err = cursor.All(context.Background(), &booksFound); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error decoding books"})
+		return
+	}
+	
+	// Return the matching books as a JSON response
+	c.JSON(http.StatusOK, booksFound)
 }

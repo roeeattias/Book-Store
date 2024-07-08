@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -20,6 +21,7 @@ func main() {
         AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"}, // Allowed headers
         ExposeHeaders:    []string{"Content-Length"}, // Expose specific headers to the client
         AllowCredentials: true, // Allow credentials (cookies, authorization headers)
+		MaxAge: 12 * time.Hour,
     }
 
     // Apply the CORS middleware to the router
@@ -43,7 +45,8 @@ func main() {
 	router.DELETE("/deleteBook", mongoapi.Middleware, mongoapi.DeleteBook)
 	router.POST("/buyBook", mongoapi.BuyBook)
 	router.POST("/getAuthors", mongoapi.GetAuthors)
-
+	router.POST("/getAuthorBooks", mongoapi.GetAuthorBooks)
+	
 	fmt.Println("Start listening on post 8080")
 	router.Run()
 }
