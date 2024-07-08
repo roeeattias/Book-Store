@@ -57,7 +57,7 @@ func Login(c *gin.Context) {
 		"id": author.ID,
 		"username": author.Username,
 		"publishedBooks": author.PublishedBooks,
-		"profilePicture": base64ImageData,
+		"image_url": base64ImageData,
 	}
 
 	// setting an authorization cookie
@@ -77,13 +77,14 @@ func SignUp(c *gin.Context) {
 	// checking if the author exists in the database
 	author := getAuthorByName(newAuthor.Username)
 	if author.Username != "" {
+		fmt.Println("here1")
 		c.Status(http.StatusInternalServerError)
 		return
 	}
 
 	decodedImageData, base64ImageData := decodeImageFromBase64(newAuthor.ImageUrl)
 	if (decodedImageData == nil) {
-		fmt.Println("here")
+		fmt.Println("here2")
 		c.Status(http.StatusInternalServerError)
 		return
 	}
@@ -94,6 +95,7 @@ func SignUp(c *gin.Context) {
 	
     // Write to file
     if err := os.WriteFile(filePath, decodedImageData, 0644); err != nil {
+		fmt.Println("here3")
         c.JSON(http.StatusInternalServerError, gin.H{"error": "Faild to upload profile image"})
 		return
     }
@@ -108,6 +110,7 @@ func SignUp(c *gin.Context) {
 	// Creating a new user document
 	authorInstance, err := mongodb.AuthorCollection.InsertOne(context.Background(), newAuthor)
 	if err != nil {
+		fmt.Println("here4")
 		c.Status(http.StatusInternalServerError)
 		return
 	}
@@ -115,6 +118,7 @@ func SignUp(c *gin.Context) {
 	// generating JWT token
 	token, err := generateJWTtoken(newAuthor.Username, authorInstance.InsertedID.(primitive.ObjectID).Hex())
 	if err != nil {
+		fmt.Println("here5")
 		c.Status(http.StatusInternalServerError)
 		return
 	}
@@ -123,7 +127,7 @@ func SignUp(c *gin.Context) {
 		"id": authorInstance.InsertedID,
 		"username": newAuthor.Username,
 		"publishedBooks": newAuthor.PublishedBooks,
-		"profilePicture": "data:image/jpeg;base64," + base64ImageData,
+		"image_url": "data:image/jpeg;base64," + base64ImageData,
 	}
 	
 	// setting the authorization cookie
@@ -146,6 +150,22 @@ func PublishBook(c *gin.Context) {
 		c.Status(http.StatusNetworkAuthenticationRequired)
         return
 	}
+	
+	decodedImageData, base64ImageData := decodeImageFromBase64(newBook.ImageUrl)
+	if (decodedImageData == nil) {
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+
+	// Determine the file type using http.DetectContentType
+	fileType := http.DetectContentType(decodedImageData)
+	filePath := "bookImages/" + generateImageIdentifier() + "." + strings.Split(fileType, "/")[1]
+	
+    // Write to file
+    if err := os.WriteFile(filePath, decodedImageData, 0644); err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Faild to upload profile image"})
+		return
+    }
 	
 	// Assert that the username is a string
 	username, ok := usernameAny.(string)
@@ -174,6 +194,7 @@ func PublishBook(c *gin.Context) {
 	newBook.Publisher = username
 	newBook.PublisherId = userIdObject
 	newBook.Rating = 0
+	newBook.ImageUrl = filePath
 
 	bookInstance, err := mongodb.BooksCollection.InsertOne(context.Background(), newBook)
 	if err != nil {
@@ -203,6 +224,7 @@ func PublishBook(c *gin.Context) {
 		return
 	}
 	newBook.ID = newBookId
+	newBook.ImageUrl = "data:image/jpeg;base64," + base64ImageData;
 	c.JSON(http.StatusCreated, newBook)
 }
 
@@ -225,6 +247,13 @@ func GetBooks(c *gin.Context) {
 			c.Status(http.StatusInternalServerError)
 			return
 		}
+		base64ImageData, err := encodeImageToBase64(book.ImageUrl)
+		if (err != nil) {
+
+			c.Status(http.StatusInternalServerError)
+			return
+		}
+		book.ImageUrl = base64ImageData
 		books = append(books, book)
 	}
 
@@ -472,12 +501,28 @@ func GetAuthorBooks(c *gin.Context) {
 	}
 	defer cursor.Close(context.Background())
 
-	var booksFound []bson.M
-	if err = cursor.All(context.Background(), &booksFound); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error decoding books"})
+	var booksFound []mongoschemes.Book
+	for cursor.Next(context.Background()) {
+		var book mongoschemes.Book
+		if err := cursor.Decode(&book); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error decoding book"})
+			return
+		}
+		base64ImageData, err := encodeImageToBase64(book.ImageUrl)
+		if (err != nil) {
+
+			c.Status(http.StatusInternalServerError)
+			return
+		}
+		book.ImageUrl = base64ImageData
+		booksFound = append(booksFound, book)
+	}
+
+	if err := cursor.Err(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Cursor error"})
 		return
 	}
-	
+
 	// Return the matching books as a JSON response
 	c.JSON(http.StatusOK, booksFound)
 }

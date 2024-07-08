@@ -12,6 +12,7 @@ type Book struct {
 	Author 	string `bson:"author" json:"author"`
 	Quantity int   `bson:"quantity" json:"quantity"`
 	Price int `bson:"price" json:"price"`
+	ImageUrl interface{} `bson:"image_url" json:"image_url"`
 	PublishDate time.Time `bson:"publish_date" json:"publish_date"`
 	Publisher string `bson:"publisher" json:"publisher"`
 	PublisherId primitive.ObjectID `bson:"publisher_id" json:"publisher_id"`

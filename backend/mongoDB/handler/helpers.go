@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"math/rand"
 	"net/http"
 	"os"
 	"strings"
@@ -19,6 +20,9 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+var seededRand *rand.Rand = rand.New(
+	rand.NewSource(time.Now().UnixNano()))
+var randomIdentifierCharset = "abcdefghijklmnopkrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()+-"
 
 func getAuthorByName(username string) mongoschemes.Author {
 	var user mongoschemes.Author
@@ -179,17 +183,14 @@ func encodeImageToBase64(imagePath interface{}) (string, error) {
 
 func decodeImageFromBase64(imagePath interface{}) ([]byte, string) {
 	// Type assertion to convert interface{} to map[string]interface{}
-	fmt.Println(imagePath)
 	dataMap, ok := imagePath.(map[string]interface{});
 	if !ok {
-		fmt.Println("here1")
 		return nil, ""
 	}
 
 	// Access the 'dataUrl' key if it exists
 	dataUrl, ok := dataMap["dataUrl"].(string);
 	if !ok {
-		fmt.Println("here2")
 		return nil, ""
 	}
 
@@ -199,9 +200,16 @@ func decodeImageFromBase64(imagePath interface{}) ([]byte, string) {
     // Decode base64 string to byte slice
     decoded, err := base64.StdEncoding.DecodeString(base64ImageData)
     if err != nil {
-		fmt.Println("here3")
 		return nil, ""
     }
 
 	return decoded, base64ImageData
+}
+
+func generateImageIdentifier() (string) {
+	b := make([]byte, 64)
+	for i := range b {
+	  b[i] = randomIdentifierCharset[seededRand.Intn(len(randomIdentifierCharset))]
+	}
+	return string(b)
 }
