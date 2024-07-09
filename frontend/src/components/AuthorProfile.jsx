@@ -33,7 +33,7 @@ const AuthorProfile = ({ author }) => {
         <p className="text-subText text-sm">
           Published Books: {author.publishedBooks.length}
         </p>
-        <div className="w-2/3 mt-4 max-h-screen overflow-y-auto">
+        <div className="mt-4 max-h-screen overflow-y-auto ml-20 mr-20">
           {books === null ? <></> : <Books booksToShow={books} />}
         </div>
       </div>

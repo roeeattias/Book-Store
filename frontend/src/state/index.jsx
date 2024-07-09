@@ -24,11 +24,8 @@ export const authSlice = createSlice({
     },
     setBook: (state, action) => {
       const updatedBooks = current(state.books).map((book) => {
-        const bookId = book.id === undefined ? book._id : book.id;
-        const bookFromPayload =
-          action.payload.book.id === undefined
-            ? action.payload.book._id
-            : action.payload.book.id;
+        const bookId = book.id;
+        const bookFromPayload = action.payload.book.id;
         if (bookId === bookFromPayload) {
           return action.payload.book;
         }
@@ -43,6 +40,18 @@ export const authSlice = createSlice({
         action.payload.book.id,
       ];
     },
+    deleteBook: (state, action) => {
+      const booksAfterDelete = state.books.filter(function (book) {
+        return book.id !== action.payload.book.id;
+      });
+      const userPublishedBooksAfterDelete = state.user.publishedBooks.filter(
+        function (book) {
+          return book.id !== action.payload.book.id;
+        }
+      );
+      state.books = booksAfterDelete;
+      state.user.publishedBooks = userPublishedBooksAfterDelete;
+    },
     incBoughtBook: (state) => {
       state.bought = state.bought + 1;
     },
@@ -55,6 +64,7 @@ export const {
   setBooks,
   setBook,
   addBook,
+  deleteBook,
   incBoughtBook,
 } = authSlice.actions;
 export default authSlice.reducer;
