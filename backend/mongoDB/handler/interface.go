@@ -374,8 +374,29 @@ func DeleteBook(c *gin.Context) {
 		return
 	}
 
+	// Update the authors collection to remove the book from the author's books array
+	update := bson.M{
+		"$pull": bson.M{
+			"published_books": currentBook.ID, // Assuming bookId is the ID of the book you want to delete
+		},
+	}
+
+	filter := bson.M{"_id": userObjectId}
+
+	_, updateErr := mongodb.AuthorCollection.UpdateOne(context.Background(), filter, update)
+	if updateErr != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete books from author"})
+		return
+	}
+
+
+	// deleting the book image from the backend local storage
+	fmt.Println(currentBook.ImageUrl.(string))
+	os.Remove(currentBook.ImageUrl.(string))
+    
+
 	// Define the filter to match the ObjectId
-    filter := bson.M{"_id": bookToDelete.ID}
+    filter = bson.M{"_id": bookToDelete.ID}
 
     // Perform the delete operation
     _, err = mongodb.BooksCollection.DeleteOne(context.TODO(), filter)
